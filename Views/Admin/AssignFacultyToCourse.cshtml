@@ -1,0 +1,115 @@
+@model SIMS.Models.ViewModels.AssignFacultyToCourseViewModel
+@{
+    ViewData["Title"] = "Assign Faculty";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Assign Faculty
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Course:</strong> @ViewBag.CourseName (@ViewBag.CourseCode)
+                    </div>
+
+                    <form asp-action="AssignFacultyToCourse" method="post">
+                        <input type="hidden" asp-for="CourseId" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label required">
+                                <i class="bi bi-people me-1"></i>
+                                Select Faculty
+                            </label>
+                            <select name="FacultyIds" class="form-select" multiple size="8" required>
+                                @foreach (var faculty in ViewBag.Faculties as SelectList)
+                                {
+                                    <option value="@faculty.Value">@faculty.Text</option>
+                                }
+                            </select>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Hold Ctrl (Windows) or Cmd (Mac) to select multiple faculty
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Role" class="form-label"></label>
+                            <select asp-for="Role" class="form-select">
+                                <option value="Faculty">Faculty</option>
+                                <option value="Primary Faculty">Primary Faculty</option>
+                                <option value="Teaching Assistant">Teaching Assistant</option>
+                                <option value="Visiting Faculty">Visiting Faculty</option>
+                            </select>
+                            <span asp-validation-for="Role" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ClassGroup" class="form-label"></label>
+                            <input asp-for="ClassGroup" class="form-control" 
+                                   placeholder="E.g: Class A, Group 1, Class K62..." />
+                            <span asp-validation-for="ClassGroup" class="text-danger"></span>
+                            <small class="text-muted">Optional: Distinguish class/group that faculty is responsible for</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label"></label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" 
+                                      placeholder="Additional notes..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i> Assign
+                            </button>
+                            <a asp-action="ManageCourseFaculties" asp-route-courseId="@Model.CourseId" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Guidelines</strong>
+                </div>
+                <div class="card-body">
+                    <h6>Assigning multiple faculty to one course:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Role:</strong> Distinguish primary, secondary, and teaching assistant</li>
+                        <li><strong>Class/Group:</strong> Helps distinguish which class the faculty teaches</li>
+                        <li><strong>Example:</strong> 
+                            <ul>
+                                <li>Faculty A - Primary Faculty - Class A</li>
+                                <li>Faculty B - Faculty - Class B</li>
+                                <li>Faculty C - Teaching Assistant - Lab Support</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+<style>
+    .required::after {
+        content: " *";
+        color: red;
+    }
+</style>

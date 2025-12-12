@@ -1,0 +1,242 @@
+@model SIMS.Models.ViewModels.AssignStudentToCourseViewModel
+@{
+    ViewData["Title"] = "Assign Students to Class";
+}
+
+<div class="page-header">
+    <h2>
+        <i class="bi bi-person-plus-fill"></i>
+        Assign Students to Class
+    </h2>
+    <p class="text-muted">Select specific students to assign to course and class</p>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="AssignStudents" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row g-3">
+                        <!-- Môn học -->
+                        <div class="col-md-12">
+                            <label asp-for="CourseId" class="form-label">
+                                <i class="bi bi-book me-1"></i>
+                                Course
+                            </label>
+                            <select asp-for="CourseId" id="courseSelect" class="form-select" asp-items="ViewBag.Courses">
+                                <option value="">-- Select Course --</option>
+                            </select>
+                            <span asp-validation-for="CourseId" class="text-danger"></span>
+                        </div>
+
+                        <!-- ✅ NEW: Chọn lớp/lịch học -->
+                        <div class="col-md-12" id="scheduleSelectContainer" style="display: none;">
+                            <label asp-for="ScheduleId" class="form-label">
+                                <i class="bi bi-calendar-check me-1"></i>
+                                Class (Optional)
+                            </label>
+                            <select asp-for="ScheduleId" id="scheduleSelect" class="form-select">
+                                <option value="">-- No specific class (enroll in course only) --</option>
+                            </select>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Select specific class if you want to assign students to a class with specific faculty, time, and room
+                            </small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Semester" class="form-label">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                Semester
+                            </label>
+                            <select asp-for="Semester" id="semesterSelect" class="form-select">
+                                @foreach (var sem in ViewBag.Semesters as string[])
+                                {
+                                    <option value="@sem">@sem</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Semester" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AcademicYear" class="form-label">
+                                <i class="bi bi-calendar-range me-1"></i>
+                                Academic Year
+                            </label>
+                            <input asp-for="AcademicYear" id="academicYearInput" class="form-control" placeholder="2024-2025" />
+                            <span asp-validation-for="AcademicYear" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <hr class="my-4" />
+                            <h5 class="mb-3">
+                                <i class="bi bi-people me-2"></i>
+                                Select Students
+                            </h5>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="bi bi-building me-1"></i>
+                                Filter by Department
+                            </label>
+                            <select id="filterDepartment" class="form-select">
+                                <option value="">-- Select Department --</option>
+                                @foreach (var dept in ViewBag.Departments as string[])
+                                {
+                                    <option value="@dept">@dept</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="bi bi-door-open me-1"></i>
+                                Filter by Class
+                            </label>
+                            <input type="text" id="filterClassName" class="form-control" placeholder="E.g: 21IT1" />
+                        </div>
+
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="button" id="btnLoadStudents" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Load Student List
+                            </button>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">
+                                <i class="bi bi-list-check me-1"></i>
+                                Student List (Multiple Selection)
+                            </label>
+                            <select asp-for="StudentIds" id="studentList" class="form-select" multiple size="10" disabled>
+                                <option disabled>Please select department and click "Load Student List"</option>
+                            </select>
+                            <span asp-validation-for="StudentIds" class="text-danger"></span>
+                            <small class="text-muted">
+                                Hold Ctrl (Windows) or Cmd (Mac) to select multiple students
+                            </small>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="Notes" class="form-label">
+                                <i class="bi bi-sticky me-1"></i>
+                                Notes
+                            </label>
+                            <textarea asp-for="Notes" class="form-control" rows="3" 
+                                      placeholder="Notes about this assignment (optional)"></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <hr />
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i> Assign
+                            </button>
+                            <a asp-action="ManageEnrollments" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // ✅ NEW: Load schedules when course/semester/year changes
+            function loadSchedules() {
+                var courseId = $('#courseSelect').val();
+                var semester = $('#semesterSelect').val();
+                var academicYear = $('#academicYearInput').val();
+
+                if (!courseId || !semester || !academicYear) {
+                    $('#scheduleSelectContainer').hide();
+                    return;
+                }
+
+                $('#scheduleSelect').html('<option value="">Loading...</option>');
+                $('#scheduleSelectContainer').show();
+
+                $.ajax({
+                    url: '@Url.Action("GetCourseSchedules", "Admin")',
+                    type: 'GET',
+                    data: { 
+                        courseId: courseId,
+                        semester: semester,
+                        academicYear: academicYear
+                    },
+                    success: function(data) {
+                        $('#scheduleSelect').empty();
+                        $('#scheduleSelect').append('<option value="">-- No specific class --</option>');
+                        
+                        if (data.length === 0) {
+                            $('#scheduleSelect').append('<option disabled>No classes available for this course</option>');
+                        } else {
+                            $.each(data, function(i, schedule) {
+                                var text = schedule.facultyName + ' - ' + 
+                                          schedule.dayName + ', ' + 
+                                          schedule.periodRange + ' (' + 
+                                          schedule.timeRange + '), ' +
+                                          'Room ' + schedule.room;
+                                $('#scheduleSelect').append(
+                                    $('<option></option>').val(schedule.scheduleId).text(text)
+                                );
+                            });
+                        }
+                    },
+                    error: function() {
+                        $('#scheduleSelect').html('<option disabled>Error loading schedule</option>');
+                    }
+                });
+            }
+
+            $('#courseSelect, #semesterSelect, #academicYearInput').on('change', loadSchedules);
+
+            // Load students
+            $('#btnLoadStudents').click(function() {
+                var department = $('#filterDepartment').val();
+                var className = $('#filterClassName').val();
+
+                if (!department) {
+                    alert('Please select a department!');
+                    return;
+                }
+
+                $('#studentList').html('<option>Loading...</option>').prop('disabled', true);
+
+                $.ajax({
+                    url: '@Url.Action("GetStudentsByDepartment", "Admin")',
+                    type: 'GET',
+                    data: { 
+                        department: department,
+                        className: className 
+                    },
+                    success: function(data) {
+                        $('#studentList').empty().prop('disabled', false);
+                        
+                        if (data.length === 0) {
+                            $('#studentList').html('<option disabled>No students found</option>');
+                        } else {
+                            $.each(data, function(index, item) {
+                                $('#studentList').append(
+                                    $('<option></option>').val(item.id).text(item.text)
+                                );
+                            });
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while loading student list!');
+                        $('#studentList').html('<option disabled>Error loading data</option>');
+                    }
+                });
+            });
+        });
+    </script>
+}

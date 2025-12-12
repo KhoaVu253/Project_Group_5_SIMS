@@ -1,0 +1,150 @@
+@model IEnumerable<SIMS.Models.Student>
+@{
+    ViewData["Title"] = "Student Management";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-people"></i> Student Management</h2>
+        </div>
+        <div class="col-auto">
+            <a asp-action="CreateStudent" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Student
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <input type="text" name="searchString" value="@ViewBag.SearchString" 
+                           class="form-control"                            placeholder="Search by student ID, name, department, class...">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Class</th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var student in Model)
+                        {
+                            <tr>
+                                <td><strong>@student.StudentCode</strong></td>
+                                <td>@student.FullName</td>
+                                <td>@student.Email</td>
+                                <td>@student.Department</td>
+                                <td>@student.ClassName</td>
+                                <td>
+                                    @if (student.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Locked</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="EditStudent" asp-route-id="@student.Id" 
+                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    
+                                    @if (student.IsActive)
+                                    {
+                                        <!-- Normal delete (soft delete if has enrollment) -->
+                                        <form asp-action="DeleteStudent" asp-route-id="@student.Id" 
+                                              method="post" class="d-inline"
+                                              onsubmit="return confirm('Delete student @student.FullName?\n\nNote: If the student has enrollments, the account will be locked instead of deleted.');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Force delete -->
+                                        <button type="button" class="btn btn-sm btn-outline-dark" 
+                                                title="Force Delete (including enrollments)"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#forceDeleteModal-@student.Id">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Locked</span>
+                                    }
+                                </td>
+                            </tr>
+                            
+                            <!-- Modal xác nhận xóa hẳn -->
+                            <div class="modal fade" id="forceDeleteModal-@student.Id" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">
+                                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                                Confirm Force Delete
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-3">
+                                                <strong>WARNING:</strong> You are about to force delete student:
+                                            </p>
+                                            <ul class="list-unstyled ms-3">
+                                                <li><strong>Student ID:</strong> @student.StudentCode</li>
+                                                <li><strong>Full Name:</strong> @student.FullName</li>
+                                                <li><strong>Class:</strong> @student.ClassName</li>
+                                            </ul>
+                                            <div class="alert alert-danger" role="alert">
+                                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                                <strong>This action will:</strong>
+                                                <ul class="mt-2 mb-0">
+                                                    <li>Delete all student information</li>
+                                                    <li>Delete login account</li>
+                                                    <li>Delete all enrollments</li>
+                                                    <li>Delete all grades</li>
+                                                </ul>
+                                                <p class="mt-2 mb-0"><strong>⚠️ CANNOT BE UNDONE!</strong></p>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="bi bi-x-circle me-1"></i> Cancel
+                                            </button>
+                                            <form asp-action="ForceDeleteStudent" asp-route-id="@student.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-trash me-1"></i> Force Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

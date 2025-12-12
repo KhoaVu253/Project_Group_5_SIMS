@@ -1,0 +1,149 @@
+@model IEnumerable<SIMS.Models.Faculty>
+@{
+    ViewData["Title"] = "Faculty Management";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-person-badge"></i> Faculty Management</h2>
+        </div>
+        <div class="col-auto">
+            <a asp-action="CreateFaculty" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Faculty
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <input type="text" name="searchString" value="@ViewBag.SearchString" 
+                           class="form-control"                            placeholder="Search by faculty ID, name, department...">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Faculty ID</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Phone Number</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var faculty in Model)
+                        {
+                            <tr>
+                                <td><strong>@faculty.FacultyCode</strong></td>
+                                <td>@faculty.FullName</td>
+                                <td>@faculty.Email</td>
+                                <td>@faculty.Phone</td>
+                                <td>@faculty.Department</td>
+                                <td>
+                                    @if (faculty.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Locked</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="EditFaculty" asp-route-id="@faculty.Id" 
+                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    
+                                    @if (faculty.IsActive)
+                                    {
+                                        <!-- Xóa thông thường (soft delete nếu có course) -->
+                                        <form asp-action="DeleteFaculty" asp-route-id="@faculty.Id" 
+                                              method="post" class="d-inline"
+                                              onsubmit="return confirm('Delete faculty @faculty.FullName?\n\nNote: If the faculty is teaching courses, the account will be locked instead of deleted.');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Xóa hẳn (force delete) -->
+                                        <button type="button" class="btn btn-sm btn-outline-dark" 
+                                                title="Force Delete (courses will have no faculty)"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#forceDeleteModal-@faculty.Id">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Locked</span>
+                                    }
+                                </td>
+                            </tr>
+                            
+                            <!-- Modal xác nhận xóa hẳn -->
+                            <div class="modal fade" id="forceDeleteModal-@faculty.Id" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">
+                                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                                Confirm Force Delete
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-3">
+                                                <strong>WARNING:</strong> You are about to force delete faculty:
+                                            </p>
+                                            <ul class="list-unstyled ms-3">
+                                                <li><strong>Faculty ID:</strong> @faculty.FacultyCode</li>
+                                                <li><strong>Full Name:</strong> @faculty.FullName</li>
+                                                <li><strong>Department:</strong> @faculty.Department</li>
+                                            </ul>
+                                            <div class="alert alert-danger" role="alert">
+                                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                                <strong>This action will:</strong>
+                                                <ul class="mt-2 mb-0">
+                                                    <li>Delete all faculty information</li>
+                                                    <li>Delete login account</li>
+                                                    <li>Courses being taught will have <strong>no faculty</strong></li>
+                                                </ul>
+                                                <p class="mt-2 mb-0"><strong>⚠️ CANNOT BE UNDONE!</strong></p>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="bi bi-x-circle me-1"></i> Cancel
+                                            </button>
+                                            <form asp-action="ForceDeleteFaculty" asp-route-id="@faculty.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-trash me-1"></i> Force Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
